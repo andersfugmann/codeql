@@ -1,0 +1,1 @@
+| test.cpp:8:5:8:11 | ... = ... | Variable i has unspecified value after assigment, due to use of unary in/de-crement operator on right hand side |
