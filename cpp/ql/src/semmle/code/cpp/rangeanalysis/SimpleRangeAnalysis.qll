@@ -1530,6 +1530,22 @@ private predicate isUnsupportedGuardPhi(Variable v, RangeSsaDefinition phi, Vari
   )
 }
 
+/**
+ * Gets the upper bound of the expression, if the expression is guarded.
+ * An upper bound can only be found, if a guard phi node can be found, and no
+ * frontier phi exists for the phi node
+ */
+private float getGuardedUpperbound(VariableAccess guardedAccess) {
+  exists(
+    RangeSsaDefinition def, StackVariable v, VariableAccess guardVa, Expr guard, boolean branch
+  |
+    def.isGuardPhi(v, guardVa, guard, branch) and
+    not def.hasFrontierPhi(v) and
+    guardedAccess = def.getAUse(v) and
+    upperBoundFromGuard(guard, guardVa, result, branch)
+  )
+}
+
 cached
 private module SimpleRangeAnalysisCached {
   /**
@@ -1565,9 +1581,9 @@ private module SimpleRangeAnalysisCached {
    */
   cached
   float upperBound(Expr expr) {
-    // Combine the upper bounds returned by getTruncatedUpperBounds into a
-    // single maximum value.
-    result = max(float ub | ub = getTruncatedUpperBounds(expr) | ub)
+    // Combine the upper bounds returned by getTruncatedUpperBounds and
+    // getGuardedUpperbound into a single maximum value
+    result = min([max(getTruncatedUpperBounds(expr)), getGuardedUpperbound(expr)])
   }
 
   /**

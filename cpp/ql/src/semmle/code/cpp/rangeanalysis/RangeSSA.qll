@@ -95,10 +95,24 @@ class RangeSsaDefinition extends ControlFlowNodeBase {
 
   /**
    * If this definition is a phi node corresponding to a guard,
-   * then return the variable and the guard.
+   * then return the variable access and the guard.
    */
-  predicate isGuardPhi(VariableAccess v, Expr guard, boolean branch) {
-    guard_defn(v, guard, this, branch)
+  predicate isGuardPhi(VariableAccess va, Expr guard, boolean branch) {
+    guard_defn(va, guard, this, branch)
+  }
+
+  /**
+   * If this definition is a phi node corresponding to a guard,
+   * then return the variable guarded, the variable access and the guard.
+   */
+  predicate isGuardPhi(StackVariable v, VariableAccess va, Expr guard, boolean branch) {
+    guard_defn(va, guard, this, branch) and
+    va.getTarget() = v
+  }
+
+  /** Holds if this definition is a _frontier phi node_, meaning it's an ordinary phi node as in non-range SSA. Note that there can be both a guard phi node and a frontier phi node on the same `(def, v)` pair (example: on the statement after `if (x < 2 || ...)`). */
+  predicate hasFrontierPhi(StackVariable v) {
+    exists(RangeSSA x | x.frontier_phi_node(v, this.(BasicBlock)))
   }
 
   /** Gets the primary location of this definition. */

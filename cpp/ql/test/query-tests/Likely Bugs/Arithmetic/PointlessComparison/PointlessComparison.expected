@@ -27,6 +27,7 @@
 | PointlessComparison.c:103:7:103:11 | ... < ... | Comparison is always false because a >= 0. |
 | PointlessComparison.c:107:18:107:22 | ... < ... | Comparison is always false because c >= 0. |
 | PointlessComparison.c:116:12:116:16 | ... < ... | Comparison is always true because a <= 0 and 6 <= b. |
+| PointlessComparison.c:118:19:118:25 | ... > ... | Comparison is always false because b <= 5. |
 | PointlessComparison.c:119:12:119:16 | ... > ... | Comparison is always false because a <= 100 and 106 <= b. |
 | PointlessComparison.c:126:12:126:18 | ... >= ... | Comparison is always true because a >= 20. |
 | PointlessComparison.c:129:12:129:16 | ... > ... | Comparison is always false because a <= 3. |
