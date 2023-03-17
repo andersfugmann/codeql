@@ -2,7 +2,8 @@ void *malloc(int);
 void free(void *);
 bool condition();
 void use(void*);
-
+void *realloc(void*, unsigned long);
+int strlen(char*);
 
 void test(int *a)
 {
@@ -136,13 +137,51 @@ void use_after_free(void *a) {
     use(a); // BAD
 }
 
+void test_realloc1(void *a) {
+    free(a);
+    a = realloc(a, 10); // BAD
+    free(a); // GOOD
+    void *b = realloc(a, 10); // BAD
+    free(a); // BAD
+    free(b); // GOOD
+}
 
+void test_realloc2(void *a) {
+    free(a);
+    void *b = realloc(a, sizeof(a)*3);
+    free(a); // BAD
+    free(b); // GOOD
+}
 
+void test_realloc3(char *a) {
+    void *b = realloc(a, strlen(a)+3); // GOOD [FALSE POSITIVE]
 
+    // From the man page on return values from realloc and reallocarray:
+    // "If these functions  fail, the original block is left untouched; it is not freed or moved."
+    if (!b) {
+        free(a); // GOOD [FALSE POSITIVE]
+    }
+}
 
+struct list {
+    struct list *next;
+    void* data;
+};
 
+void test_ptr_deref(void ** a) {
+    free(*a);
+    *a = malloc(10);
+    free(*a); // GOOD [FALSE POSITIVE]
+    free(*a); // BAD
+}
 
-
-
-
+void test_loop(struct list ** list_ptr) {
+    struct list *next;
+    while (*list_ptr) { // GOOD [FALSE POSITIVE]
+        free((*list_ptr)->data);
+        next = (*list_ptr)->next;
+        free(*list_ptr);
+        *list_ptr = next; // GOOD [FALSE POSITIVE]
+    }
+}
 
