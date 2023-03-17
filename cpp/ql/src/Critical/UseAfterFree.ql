@@ -13,7 +13,7 @@
 import cpp
 import semmle.code.cpp.dataflow.new.DataFlow
 
-predicate free_expr(DataFlow::Node dfe, Expr e) {
+predicate freeExpr(DataFlow::Node dfe, Expr e) {
   dfe.asExpr() = any(DeallocationExpr de).getFreedExpr() and
   e = dfe.asExpr()
 }
@@ -24,10 +24,10 @@ query predicate edges(DataFlow::Node dfe1, DataFlow::Node dfe2) {
 
 from DataFlow::Node dfe1, DataFlow::Node dfe2, Expr e1, Expr e2
 where
-  free_expr(dfe1, e1) and
+  freeExpr(dfe1, e1) and
   dfe2.asExpr() = e2 and
   e1 != e2 and
-  not free_expr(dfe2, e2) and
+  not freeExpr(dfe2, e2) and
   DataFlow::localFlow(dfe1, dfe2) and
   (
     bbDominates(e1.getBasicBlock(), e2.getBasicBlock()) or
