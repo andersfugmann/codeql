@@ -7,7 +7,7 @@
 <overview>
 <p>
 This rule finds memory blocks that are freed more than once. Freeing a
-memory block twice may result in memory corruption for example if the
+memory block twice may result in memory corruption if for example the
 allocator returns pointers to overlapping memory regions though successive
 calls to allocate memory. This can lead to anything
 from a segfault to memory corruption and possible security vulnerability.
