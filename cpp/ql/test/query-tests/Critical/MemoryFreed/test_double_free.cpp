@@ -185,3 +185,16 @@ void test_loop(struct list ** list_ptr) {
     }
 }
 
+void* test_realloc4() {
+    void *a = 0;
+    void *b = realloc(a, 10);
+    if (!b) { return a; } // GOOD [FALSE POSITIVE]
+    return b;
+}
+
+void* test_alloc1() {
+    void *a = 0;
+    free(a);
+    use(a); // GOOD [FALSE POSITIVE]
+    return a; // GOOD [FALSE POSITIVE]
+}

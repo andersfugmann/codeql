@@ -184,3 +184,5 @@ edges
 | test_double_free.cpp:183:15:183:22 | list_ptr indirection | test_double_free.cpp:183:15:183:22 | list_ptr indirection |
 | test_double_free.cpp:184:10:184:17 | list_ptr indirection | test_double_free.cpp:180:13:180:20 | Phi |
 | test_double_free.cpp:184:10:184:17 | list_ptr indirection | test_double_free.cpp:180:13:180:20 | Phi |
+| test_double_free.cpp:190:23:190:23 | a | test_double_free.cpp:190:23:190:23 | a |
+| test_double_free.cpp:197:10:197:10 | a | test_double_free.cpp:197:10:197:10 | a |
