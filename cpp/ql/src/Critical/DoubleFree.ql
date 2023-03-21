@@ -15,7 +15,11 @@ import semmle.code.cpp.dataflow.new.DataFlow
 
 predicate freeExpr(DataFlow::Node dfe, Expr e) {
   e = any(DeallocationExpr de).getFreedExpr() and
-  e = dfe.asExpr()
+  e = dfe.asExpr() and
+  exists(DeallocationFunction df | df.getACallToThisFunction().getAChild() = e |
+    not df.getName().regexpMatch(".*realloc")
+  ) and
+  not e = any(PointerDereferenceExpr pde)
 }
 
 /**
