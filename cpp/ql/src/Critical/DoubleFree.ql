@@ -16,10 +16,13 @@ import semmle.code.cpp.dataflow.new.DataFlow
 predicate freeExpr(DataFlow::Node dfe, Expr e) {
   e = any(DeallocationExpr de).getFreedExpr() and
   e = dfe.asExpr() and
+  // Ignore any function named realloc
   exists(DeallocationFunction df | df.getACallToThisFunction().getAChild() = e |
-    not df.getName().regexpMatch(".*realloc")
-  ) and
-  not e = any(PointerDereferenceExpr pde)
+    not df.getName().regexpMatch(".*realloc") and
+    not df.hasName("MmFreePagesFromMdl") and
+    // Ignore free on pointer dereferences
+    not e = any(PointerDereferenceExpr pde)
+  )
 }
 
 /**
@@ -27,31 +30,45 @@ predicate freeExpr(DataFlow::Node dfe, Expr e) {
  * argument of a `DeallocationExpr` that is free'ing the
  * expression `e`.
  */
-predicate flowsFromFree(DataFlow::Node n, Expr e) {
+predicate flowsFrom(DataFlow::Node n, Expr e) {
   freeExpr(n, e)
   or
   exists(DataFlow::Node prev |
-    flowsFromFree(prev, e) and
-    DataFlow::localFlowStep(prev, n)
+    flowsFrom(prev, e) and
+    DataFlow::localFlowStep(prev, n) and
+    not sanitizes(n)
+  )
+}
+
+/**
+ * Holds if the address of the dataflow node `n` passed to a function call
+ * or if `n` is passed as a references in a function call such that the
+ * memory pointed to by `n` may be changed by the function call.
+ */
+predicate sanitizes(DataFlow::Node n) {
+  n.asIndirectExpr() = any(AddressOfExpr aoe)
+  or
+  exists(Call c, int i | c.getArgument(i) = n.asIndirectExpr() |
+    c.getTarget().getParameter(i).getType() instanceof ReferenceType
   )
 }
 
 /**
  * Holds if `n` is a dataflow node that is part of a path
- * from one `DeallocationExpr de1` to another `DeallocationExpr de2`
+ * from one `Expr e1` to another `Expr e2`
  * such that one of the following two conditions hold:
- * 1. `de1` dominates `de2`, or
- * 2. `de2` post-dominates `de1`.
+ * 1. `e1` dominates `e2`, or
+ * 2. `e2` post-dominates `e1`.
  */
-predicate flowsToFree(DataFlow::Node n) {
-  exists(Expr source | flowsFromFree(n, source) |
+predicate flowsTo(DataFlow::Node n) {
+  exists(Expr source | flowsFrom(n, source) |
     exists(Expr sink | freeExpr(n, sink) |
       dominates(source, sink) or
       postDominates(sink, source)
     )
     or
     exists(DataFlow::Node succ |
-      flowsToFree(succ) and
+      flowsTo(succ) and
       DataFlow::localFlowStep(n, succ)
     )
   )
@@ -64,8 +81,8 @@ predicate flowsToFree(DataFlow::Node n) {
  * of a path from one `DeallocationExpr` to another.
  */
 predicate step(DataFlow::Node n1, DataFlow::Node n2) {
-  flowsToFree(n1) and
-  flowsToFree(n2) and
+  flowsTo(n1) and
+  flowsTo(n2) and
   DataFlow::localFlowStep(n1, n2)
 }
 
@@ -77,10 +94,6 @@ where
   freeExpr(dfe2, e2) and
   e1 != e2 and
   step+(dfe1, dfe2) and
-  (
-    bbDominates(e1.getBasicBlock(), e2.getBasicBlock()) or
-    bbPostDominates(e2.getBasicBlock(), e1.getBasicBlock())
-  ) and
   (
     dominates(e1, e2) or
     postDominates(e2, e1)

@@ -14,29 +14,99 @@ import cpp
 import semmle.code.cpp.dataflow.new.DataFlow
 
 predicate freeExpr(DataFlow::Node dfe, Expr e) {
-  dfe.asExpr() = any(DeallocationExpr de).getFreedExpr() and
-  e = dfe.asExpr()
+  e = any(DeallocationExpr de).getFreedExpr() and
+  e = dfe.asExpr() and
+  // Ignore any function named realloc
+  exists(DeallocationFunction df | df.getACallToThisFunction().getAChild() = e |
+    not df.getName().regexpMatch(".*realloc") and
+    not df.hasName("MmFreePagesFromMdl") and
+    // Ignore free on pointer dereferences
+    not e = any(PointerDereferenceExpr pde)
+  )
 }
 
-query predicate edges(DataFlow::Node dfe1, DataFlow::Node dfe2) {
-  DataFlow::localFlowStep(dfe1, dfe2)
+predicate useExpr(DataFlow::Node dfe, Expr e) {
+  e = dfe.asExpr() and
+  (
+    e = any(ReturnStmt rs).getExpr() or
+    e = any(FunctionCall fc).getAChild() or
+    e = any(PointerDereferenceExpr pde).getOperand() or
+    e = any(PointerFieldAccess pfa).getQualifier() or
+    e = any(ArrayExpr ae).getAChild()
+  ) and
+  not freeExpr(dfe, e)
 }
+
+/**
+ * Holds if `n` is a dataflow node that is reachable from the
+ * argument of a `DeallocationExpr` that is free'ing the
+ * expression `e`.
+ */
+predicate flowsFrom(DataFlow::Node n, Expr e) {
+  freeExpr(n, e)
+  or
+  exists(DataFlow::Node prev |
+    flowsFrom(prev, e) and
+    DataFlow::localFlowStep(prev, n) and
+    not sanitizes(n)
+  )
+}
+
+/**
+ * Holds if the address of the dataflow node `n` passed to a function call
+ * or if `n` is passed as a references in a function call such that the
+ * memory pointed to by `n` may be changed by the function call.
+ */
+predicate sanitizes(DataFlow::Node n) {
+  n.asIndirectExpr() = any(AddressOfExpr aoe)
+  or
+  exists(Call c | callByReference(c, n.asVariable()))
+}
+
+/**
+ * Holds if `n` is a dataflow node that is part of a path
+ * from one `Expr e1` to another `Expr e2`
+ * such that one of the following two conditions hold:
+ * 1. `e1` dominates `e2`, or
+ * 2. `e2` post-dominates `e1`.
+ */
+predicate flowsTo(DataFlow::Node n) {
+  exists(Expr source | flowsFrom(n, source) |
+    exists(Expr sink | useExpr(n, sink) |
+      dominates(source, sink) or
+      postDominates(sink, source)
+    )
+    or
+    exists(DataFlow::Node succ |
+      flowsTo(succ) and
+      DataFlow::localFlowStep(n, succ)
+    )
+  )
+}
+
+/**
+ * Holds if `n1` steps to `n2` in one local flow step.
+ *
+ * This predicate is restricted to the steps that are part
+ * of a path from one `DeallocationExpr` to another.
+ */
+predicate step(DataFlow::Node n1, DataFlow::Node n2) {
+  flowsTo(n1) and
+  flowsTo(n2) and
+  DataFlow::localFlowStep(n1, n2)
+}
+
+query predicate edges = step/2;
 
 from DataFlow::Node dfe1, DataFlow::Node dfe2, Expr e1, Expr e2
 where
   freeExpr(dfe1, e1) and
-  dfe2.asExpr() = e2 and
+  useExpr(dfe2, e2) and
   e1 != e2 and
-  not freeExpr(dfe2, e2) and
-  DataFlow::localFlow(dfe1, dfe2) and
-  (
-    bbDominates(e1.getBasicBlock(), e2.getBasicBlock()) or
-    bbPostDominates(e2.getBasicBlock(), e1.getBasicBlock())
-  ) and
+  step+(dfe1, dfe2) and
   (
     dominates(e1, e2) or
     postDominates(e2, e1)
   )
-//select e2, dfe1, dfe2, "Potential double free of $@.", e2, e2.toString()
 select e2, dfe1, dfe2, "Memory pointed to by '" + e1.toString() + "' may have $@.", e1,
   "been previously freed"
