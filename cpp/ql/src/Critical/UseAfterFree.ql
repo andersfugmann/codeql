@@ -23,7 +23,7 @@ predicate useExpr(DataFlow::Node dfe, Expr e) {
     e = any(FunctionCall fc).getAChild() or
     e = any(PointerDereferenceExpr pde).getOperand() or
     e = any(PointerFieldAccess pfa).getQualifier() or
-    e = any(ArrayExpr ae).getAChild()
+    e = any(ArrayExpr ae).getArrayBase()
   ) and
   not Flow::freeExpr(dfe, e)
 }
