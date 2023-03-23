@@ -16,7 +16,7 @@ module FlowFromFree<flowTo/2 targetExpr> {
    * argument of a `DeallocationExpr` that is free'ing the
    * expression `e`.
    */
-  predicate flowsFrom(DataFlow::Node n, Expr e) {
+  private predicate flowsFrom(DataFlow::Node n, Expr e) {
     freeExpr(n, e)
     or
     exists(DataFlow::Node prev |
