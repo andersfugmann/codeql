@@ -18,7 +18,7 @@ predicate freeExpr(DataFlow::Node dfe, Expr e) {
   e = dfe.asExpr() and
   // Ignore any function named realloc
   exists(DeallocationFunction df | df.getACallToThisFunction().getAChild() = e |
-    not df.getName().regexpMatch(".*realloc") and
+    not df.getName().matches("%realloc") and
     not df.hasName("MmFreePagesFromMdl") and
     // Ignore free on pointer dereferences
     not e = any(PointerDereferenceExpr pde)
@@ -58,9 +58,8 @@ predicate flowsFrom(DataFlow::Node n, Expr e) {
  * memory pointed to by `n` may be changed by the function call.
  */
 predicate sanitizes(DataFlow::Node n) {
-  n.asIndirectExpr() = any(AddressOfExpr aoe)
-  or
-  exists(Call c | callByReference(c, n.asVariable()))
+  n.asIndirectExpr() = any(AddressOfExpr aoe) or
+  callByReference(_, n.asIndirectExpr().(VariableAccess).getTarget())
 }
 
 /**
