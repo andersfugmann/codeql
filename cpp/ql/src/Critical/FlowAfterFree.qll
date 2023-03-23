@@ -2,7 +2,7 @@ import cpp
 import semmle.code.cpp.dataflow.new.DataFlow
 
 /** Signature for a predicate that holds for a dataflow node and an expression whichs holds if the sink is the sought target */
-signature predicate flowTo(DataFlow::Node dfe, Expr e);
+signature predicate sink(DataFlow::Node dfe, Expr e);
 
 /**
  * Parameterized module to find flow between
@@ -10,7 +10,7 @@ signature predicate flowTo(DataFlow::Node dfe, Expr e);
  *
  *  The sink must either be post dominiating a free or dominated by a free.
  */
-module FlowFromFree<flowTo/2 targetExpr> {
+module FlowFromFree<sink/2 targetExpr> {
   /**
    * Holds if `n` is a dataflow node that is reachable from the
    * argument of a `DeallocationExpr` that is free'ing the
