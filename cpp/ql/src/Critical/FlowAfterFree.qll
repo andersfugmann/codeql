@@ -43,7 +43,7 @@ module FlowFromFree<flowTo/2 targetExpr> {
    * 1. `e1` dominates `e2`, or
    * 2. `e2` post-dominates `e1`.
    */
-  predicate flowsTo(DataFlow::Node n) {
+  private predicate flowsTo(DataFlow::Node n) {
     exists(Expr source | flowsFrom(n, source) |
       exists(Expr sink | targetExpr(n, sink) |
         dominates(source, sink) or
