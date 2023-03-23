@@ -31,7 +31,7 @@ module FlowFromFree<flowTo/2 targetExpr> {
    * or if `n` is passed as a references in a function call such that the
    * memory pointed to by `n` may be changed by the function call.
    */
-  predicate sanitizes(DataFlow::Node n) {
+  private predicate sanitizes(DataFlow::Node n) {
     n.asIndirectExpr() = any(AddressOfExpr aoe) or
     callByReference(_, n.asIndirectExpr().(VariableAccess).getTarget())
   }
