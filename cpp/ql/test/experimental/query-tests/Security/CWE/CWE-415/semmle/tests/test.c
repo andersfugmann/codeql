@@ -75,7 +75,7 @@ void workFunction_7(char *s) {
   char *buf1;
   buf = (char *) malloc(intSize);
   buf1 = (char *) realloc(buf,intSize*4);
-  free(buf); // BAD
+  free(buf); // BAD [NOT DETECTED]
 }
 void workFunction_8(char *s) {
   int intSize = 10;

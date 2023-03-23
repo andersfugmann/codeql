@@ -79,13 +79,13 @@ char* returnsFreedData(int i)
 	{
 		free(data);
 	}
-	return data;
+	return data; // BAD
 }
 
 void test5()
 {
 	char* data = returnsFreedData(1);
-	use(data); // BAD (NOT REPORTED)
+	use(data); // BAD [NOT DETECTED]
 }
 
 void test6()
@@ -94,7 +94,7 @@ void test6()
 	data = (char *)malloc(100*sizeof(char));
 	data2 = data;
 	free(data);
-	use(data2); // BAD (NOT REPORTED)
+	use(data2); // BAD [NOT DETECTED]
 }
 
 void test7()
@@ -140,7 +140,7 @@ class myClass
 {
 public:
 	myClass() { }
-	
+
 	void myMethod() { }
 };
 
@@ -156,7 +156,7 @@ template<class T> T test()
 	T* x;
 	use(x); // GOOD
 	delete x;
-	use(x); // BAD
+	use(x); // BAD [NOT DETECTED]
 }
 
 void test12(int count)
@@ -198,7 +198,7 @@ template<class T> T test15()
 	T* x;
 	use(x); // GOOD
 	delete x;
-	use(x); // BAD
+	use(x); // BAD [NOT DETECTED]
 }
 void test15runner(void)
 {
