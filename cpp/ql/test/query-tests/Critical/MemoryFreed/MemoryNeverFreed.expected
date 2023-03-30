@@ -12,3 +12,4 @@
 | test.cpp:157:3:157:26 | new[] | This memory is never freed. |
 | test.cpp:169:14:169:19 | call to strdup | This memory is never freed. |
 | test_free.cpp:167:15:167:21 | call to realloc | This memory is never freed. |
+| test_free.cpp:291:5:291:11 | call to realloc | This memory is never freed. |

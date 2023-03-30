@@ -27,6 +27,7 @@
 | test_free.cpp:209:10:209:10 | a | test_free.cpp:207:10:207:10 | a | test_free.cpp:209:10:209:10 | a | Potential Double free of 'a' may have $@. | test_free.cpp:207:10:207:10 | a | been previously freed |
 | test_free.cpp:209:10:209:10 | a | test_free.cpp:207:10:207:10 | a | test_free.cpp:209:10:209:10 | a | Potential Double free of 'a' may have $@. | test_free.cpp:207:10:207:10 | a | been previously freed |
 | test_free.cpp:209:10:209:10 | a | test_free.cpp:207:10:207:10 | a | test_free.cpp:209:10:209:10 | a | Potential Double free of 'a' may have $@. | test_free.cpp:207:10:207:10 | a | been previously freed |
+| test_free.cpp:287:10:287:10 | a | test_free.cpp:286:27:286:27 | a | test_free.cpp:287:10:287:10 | a | Potential Double free of 'a' may have $@. | test_free.cpp:286:27:286:27 | a | been previously freed |
 edges
 | test.cpp:28:7:28:12 | array1 | file://:0:0:0:0 | array1 |
 | test.cpp:33:7:33:12 | array2 | file://:0:0:0:0 | array2 |
@@ -129,3 +130,19 @@ edges
 | test_free.cpp:213:10:213:10 | a | test_free.cpp:213:10:213:10 | a |
 | test_free.cpp:216:10:216:10 | a | test_free.cpp:216:10:216:10 | a |
 | test_free.cpp:220:10:220:10 | a | test_free.cpp:220:10:220:10 | a |
+| test_free.cpp:233:10:233:10 | a | test_free.cpp:233:10:233:10 | a |
+| test_free.cpp:237:26:237:26 | a | test_free.cpp:237:26:237:26 | a |
+| test_free.cpp:242:27:242:27 | a | test_free.cpp:242:27:242:27 | a |
+| test_free.cpp:251:10:251:10 | b | test_free.cpp:251:10:251:10 | b |
+| test_free.cpp:267:10:267:10 | a | test_free.cpp:267:10:267:10 | a |
+| test_free.cpp:273:10:273:10 | a | test_free.cpp:273:10:273:10 | a |
+| test_free.cpp:278:10:278:10 | a | test_free.cpp:278:10:278:10 | a |
+| test_free.cpp:282:26:282:26 | a | test_free.cpp:282:26:282:26 | a |
+| test_free.cpp:286:27:286:27 | a | test_free.cpp:286:27:286:27 | a |
+| test_free.cpp:286:27:286:27 | a | test_free.cpp:287:10:287:10 | a |
+| test_free.cpp:287:10:287:10 | a | test_free.cpp:287:10:287:10 | a |
+| test_free.cpp:296:10:296:10 | a | test_free.cpp:296:10:296:10 | a |
+| test_free.cpp:300:10:300:10 | a | test_free.cpp:300:10:300:10 | a |
+| test_free.cpp:305:32:305:32 | a | test_free.cpp:305:32:305:32 | a |
+| test_free.cpp:306:10:306:10 | a | test_free.cpp:306:10:306:10 | a |
+| test_free.cpp:310:10:310:10 | a | test_free.cpp:310:10:310:10 | a |

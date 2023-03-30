@@ -59,9 +59,6 @@ module FlowFromFree<sink/2 targetExpr> {
 
   /**
    * Holds if `n1` steps to `n2` in one local flow step.
-   *
-   * This predicate is restricted to the steps that are part
-   * of a path from one `DeallocationExpr` to the target expression.
    */
   predicate step(DataFlow::Node n1, DataFlow::Node n2) {
     flowsTo(n1) and
@@ -83,13 +80,106 @@ module FlowFromFree<sink/2 targetExpr> {
 
 /** Holds if `dfe` is an deallocation. */
 predicate freeExpr(DataFlow::Node dfe, Expr e) {
-  e = any(DeallocationExpr de).getFreedExpr() and
+  //e = any(DeallocationExpr de).getFreedExpr() and
+  e = Dealloc::getIndirectFreedExpr() and
   e = dfe.asExpr() and
-  // Ignore any function named realloc
-  exists(DeallocationFunction df | df.getACallToThisFunction().getAChild() = e |
-    not df.getName().matches("%realloc") and
-    not df.hasName("MmFreePagesFromMdl") and
-    // Ignore free on pointer dereferences
-    not e = any(PointerDereferenceExpr pde)
-  )
+  not e = any(PointerDereferenceExpr pde)
+}
+
+private module Dealloc {
+  private predicate sourceExpr(DataFlow::Node n, Expr e) {
+    exists(Function f, Parameter p |
+      p = f.getAParameter() and
+      n.asParameter() = p and
+      e.getBasicBlock() = f.getEntryPoint().getBasicBlock()
+    )
+  }
+
+  private predicate sinkExpr(DataFlow::Node n, Expr e) {
+    e = getIndirectFreedExpr() and
+    n.asExpr() = e
+  }
+
+  private predicate sanitizeExpr(DataFlow::Node n) {
+    n.asIndirectExpr() = any(AddressOfExpr aoe) or
+    callByReference(_, n.asIndirectExpr().(VariableAccess).getTarget())
+  }
+
+  /**
+   * Holds if `n` is a dataflow node that is reachable from the
+   * argument of `sourceExpr` that reaches `sinkExpr`
+   */
+  private predicate flowsFrom(DataFlow::Node n, Expr e) {
+    sourceExpr(n, e)
+    or
+    exists(DataFlow::Node prev |
+      flowsFrom(prev, e) and
+      DataFlow::localFlowStep(prev, n) and
+      not sanitizeExpr(n)
+    )
+  }
+
+  /**
+   * Holds if `n` is a dataflow node that is part of a path
+   * from one `Expr e1` to another `Expr e2`
+   * such that `flowStep(e1, e2)` holds.
+   */
+  private predicate flowsTo(DataFlow::Node n) {
+    exists(Expr source | flowsFrom(n, source) |
+      exists(Expr sink | sinkExpr(n, sink) | postDominates(sink, source))
+      or
+      exists(DataFlow::Node succ |
+        flowsTo(succ) and
+        DataFlow::localFlowStep(n, succ)
+      )
+    )
+  }
+
+  /**
+   * Holds if `n1` steps to `n2` in one local flow step.
+   *
+   * This predicate is restricted to the steps that are part
+   * of a path from one `DeallocationExpr` to the target expression.
+   */
+  private predicate step(DataFlow::Node n1, DataFlow::Node n2) {
+    flowsTo(n1) and
+    flowsTo(n2) and
+    DataFlow::localFlowStep(n1, n2)
+  }
+
+  private predicate flows(DataFlow::Node dfe1, DataFlow::Node dfe2, Expr e1, Expr e2) {
+    step+(dfe1, dfe2) and
+    postDominates(e2, e1)
+  }
+
+  private predicate isDeallocFunction(Function f, int index) {
+    exists(DataFlow::ParameterNode source, DataFlow::Node sink |
+      source.asParameter() = f.getParameter(index) and
+      // deallocExpr.getEnclosingVariable() = source.asParameter() and
+      sink.asExpr() = getIndirectFreedExpr()
+    |
+      // This flow should be augmented to sanitize the flow.
+      //DataFlow::localFlow(source, sink) and
+      //postDominates(sink.asExpr(), f.getEntryPoint())
+      exists(Expr sourceExpr, Expr sinkExpr |
+        flows(source, sink, sourceExpr, sinkExpr) and
+        postDominates(sinkExpr, sourceExpr)
+      )
+      // There is no flow here!!
+    )
+  }
+
+  Expr getIndirectFreedExpr() {
+    result = any(DeallocationExpr de).getFreedExpr() and
+    not exists(DeallocationFunction df | df.getACallToThisFunction().getAChild() = result |
+      df.getName().matches("%realloc") or
+      df.hasName("MmFreePagesFromMdl")
+    )
+    or
+    exists(FunctionCall fc, Function f, int index |
+      fc.getArgument(index) = result and
+      fc.getTarget() = f and
+      isDeallocFunction(fc.getTarget(), index)
+    )
+  }
 }

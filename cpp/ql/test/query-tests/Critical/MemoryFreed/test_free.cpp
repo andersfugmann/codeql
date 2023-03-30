@@ -227,3 +227,96 @@ void test_ms_free(void * memory_descriptor_list) {
     MmFreePagesFromMdl(memory_descriptor_list); //GOOD
     ExFreePool(memory_descriptor_list); // GOOD
 }
+
+
+void deallocatingfunction(void *a) {
+    free(a);
+}
+
+void* test_indirect_dealloc1(void *a) {
+    deallocatingfunction(a);
+    return a; // BAD
+}
+
+void maybe_deallocatingfunction(void *a) {
+    if (condition()) free(a);
+}
+
+void* test_indirect_dealloc2(void *a) {
+    maybe_deallocatingfunction(a);
+    return a; // GOOD
+}
+
+void not_deallocatingfunction(void *a, void *b) {
+    free(b);
+}
+
+void* test_indirect_dealloc3(void *a) {
+    not_deallocatingfunction(a, 0);
+    return a; // GOOD
+}
+
+void any_function(void *a) { }
+void* test_indirect_dealloc4(void *a) {
+    any_function(a);
+    return a;
+}
+
+void indirect_dealloc1(void *a) {
+    not_deallocatingfunction(a, 0);
+    free(a); // GOOD
+}
+
+void reassign(void ** a);
+void not_deallocating(void *a) {
+    reassign(&a);
+    free(a); // GOOD
+}
+
+void indirect_dealloc2(void *a) {
+    not_deallocating(a);
+    free(a); // GOOD
+}
+
+void deallocatingfunction2(void *a) {
+    deallocatingfunction(a);
+}
+void test_indirect_dealloc5(void *a) {
+    maybe_deallocatingfunction(a);
+    deallocatingfunction2(a); // GOOD
+    free(a); // BAD
+}
+
+void indirect_realloc(void *a) {
+    realloc(a, 100);
+}
+
+void test_indirect_realloc(void *a) {
+    indirect_realloc(a);
+    free(a); // BAD [NOT DETECTED]
+}
+
+void indirect_free_by_reference(void * &a) {
+    free(a);
+    a = malloc(10);
+}
+
+void indirect_free_by_reference2(void *a) {
+    indirect_free_by_reference(a);
+    free(a); // GOOD
+}
+void test_indirect_free_by_reference(void *a) {
+    indirect_free_by_reference2(a);
+    free(a); // GOOD
+}
+
+
+
+
+
+
+
+
+
+
+
